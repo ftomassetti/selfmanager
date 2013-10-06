@@ -1,0 +1,1 @@
+[{"pk": 1, "model": "taskslist_app.project", "fields": {"description": null, "title": "Poli"}}, {"pk": 1, "model": "taskslist_app.task", "fields": {"parent_task": null, "description": null, "project_task": null, "title": "Write the thesis"}}]

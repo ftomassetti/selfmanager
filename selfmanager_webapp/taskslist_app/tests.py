@@ -6,11 +6,12 @@ Replace this with more appropriate tests for your application.
 """
 
 from django.test import TestCase
-
+from taskslist_app.models import Project,Task
 
 class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+	fixtures = ['basic']
+
+	def test_fixture_is_loaded(self):
+		self.assertEqual(1,len(Project.objects.all()))
+		self.assertEqual(1,len(Task.objects.all()))
+

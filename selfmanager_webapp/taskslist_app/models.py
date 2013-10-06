@@ -18,4 +18,11 @@ class Project(Descripted, TaskContainer):
 
 class Task(Descripted, TaskContainer):
     parent_task  = models.ForeignKey('Task',null=True)
-    project_task = models.ForeignKey(Project,null=True)    
+    project_task = models.ForeignKey(Project,null=True)  
+
+    def check_parent_valid(self):
+		if parent_task==None and project_task==None:
+			raise ValidationError("Neither parent nor project task are set")
+
+		if parent_task!=None and project_task!=None:
+			raise ValidationError("Both parent and project task are set")
