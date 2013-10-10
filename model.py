@@ -3,10 +3,12 @@ from bottle import HTTPError
 from bottle.ext import sqlalchemy
 from sqlalchemy import create_engine, Column, Integer, Sequence, String
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 import app
 
 Base = declarative_base()
 engine = create_engine('sqlite:////tmp/test.db', echo=True)
+Session = sessionmaker(bind=engine)
 
 plugin = sqlalchemy.Plugin(
     engine, # SQLAlchemy engine created with create_engine function.
@@ -17,7 +19,7 @@ plugin = sqlalchemy.Plugin(
     use_kwargs=False # If it is true and keyword is not defined, plugin uses **kwargs argument to inject session database (default False).
 )
 
-app.instance.install(plugin)
+#app.instance.install(plugin)
 
 class Project(Base):
 	__tablename__ = 'project'
@@ -25,14 +27,21 @@ class Project(Base):
 	title = Column(String(200), unique=True)
 
 	@staticmethod
-	def exist(db,_title):
-		return db.query(Project).filter_by(title=_title).first()
+	def all():
+		session = Session()
+		return session.query(Project);
+
+	@staticmethod
+	def exist(_title):
+		session = Session()
+		return session.query(Project).filter_by(title=_title).first()
 
 	@staticmethod	
-	def create(db,_title):
+	def create(_title):
+		session = Session()
 		instance = Project(title=_title)
-		db.add(instance)
-		db.commit()
+		session.add(instance)
+		session.commit()
 		return instance
 
 	def __init__(self, title):
