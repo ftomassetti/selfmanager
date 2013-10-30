@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+{% if user!=None and user.is_authenticated() and not user.is_anonymous(): %}
+Ciao
+{% else %}
+Nothing to see if you don't login.
+{% endif %}
+{% endblock %}

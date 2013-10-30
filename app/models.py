@@ -61,25 +61,7 @@ class Task(db.Model, IdMixin, GetMixin):
     def __init__(self,summary):
         self.summary = summary
 
-class Project(db.Model, IdMixin, GetMixin):
-    id    = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), unique=True)
-
-    @staticmethod
-    def exist(_title):
-        session = Session()
-        return session.query(Project).filter_by(title=_title).first()
-
-    @staticmethod   
-    def create(_title):
-        session = Session()
-        instance = Project(title=_title)
-        session.add(instance)
-        session.commit()
-        return instance
-
-    def __init__(self, title):
-        self.title = title
-
-    def __repr__(self):
-        return '[Project title:%r]' % self.title
+    @classmethod
+    def owned_by(self,user):
+        clause = Task.owners.contains(user)
+        return db.session.query(Task).filter(clause).all()
