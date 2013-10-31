@@ -1,7 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
+<script language="javascript">
+$(document).ready(function(){
+	var $ul = $('ul');
+	
+	$('#save').click( function(){
+		$.each($ul.children('li'), function( index, value ) {
+			console.log("Index "+index+", value "+$(value).attr('dbid'));
+		});
+		console.log("Saving children: "+$ul.children('li'));
+
+		$.getJSON($SCRIPT_ROOT + '/_store_tasks', {
+	        content: $ul.html()
+	      }, function(data) {
+	        //$("#result").text(data.result);
+	      });
+		localStorage.setItem('list', $ul.html());
+		//alert('save');
+	});
+		
+	$('#reset').click( function(){
+		localStorage.clear('list');
+		location.reload();
+		alert('reset');
+	});
+	
+	if(localStorage.getItem('list')){
+		$ul.html(localStorage.getItem('list'));
+	}
+});
+</script>
 {% if user!=None and user.is_authenticated() and not user.is_anonymous(): %}
-Ciao
+<ul contenteditable>
+{% for t in tasks %}
+<li dbid={{t.id}}>{{t.summary}}</li>
+{% endfor %}
+</ul>
+<a id="reset" href="javascript:void(0);">Reset</a>
+<a id="save" href="javascript:void(0);">Save</a>
 {% else %}
 Nothing to see if you don't login.
 {% endif %}

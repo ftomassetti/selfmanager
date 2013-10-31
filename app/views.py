@@ -10,6 +10,14 @@ from flask.ext.admin.contrib import sqla
 from flask.ext.admin.contrib.sqla.form import InlineModelConverter, get_form
 from flask.ext.admin import helpers
 
+from flask import Flask, jsonify, render_template, request
+
+
+@app.route('/_store_tasks')
+def store_tasks():
+    print(request.args)
+    return jsonify(result="ok")
+
 class AdminAccessible(object):
     def is_accessible(self):
         return login.current_user.is_authenticated() and login.current_user.is_admin()
@@ -103,8 +111,10 @@ class AdminIndexView(AdminAccessible, admin.AdminIndexView):
 @app.route('/')
 @app.route('/index')
 def index():
+    user = login.current_user
+    tasks = Task.owned_by(user)
     return render_template('index.html', 
-        title="Homepage",user=login.current_user)
+        title ="Homepage",user=user,tasks=tasks)
 
 
 @app.route('/login', methods=('GET', 'POST'))

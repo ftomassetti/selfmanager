@@ -1,6 +1,10 @@
 <html>
 	<head>
 		<title>Plaid - {{title}}</title>
+		<script type=text/javascript>
+  		$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+		</script>
+		<script src="{{url_for('static',filename='jquery-2.0.3.min.js')}}" language="javascript"></script>
 	</head>
 	<body>
 		<h1>{{title}}</h1>
