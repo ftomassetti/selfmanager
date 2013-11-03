@@ -2,6 +2,19 @@
 {% block content %}
 <script language="javascript">
 
+// initialize tasks list
+window.original_tasks = [
+{% for t in tasks %}
+	{'dbid':{{t.id}},'text':'{{t.summary}}'}
+{% endfor %}
+];
+
+window.current_tasks = [
+{% for t in tasks %}
+	{'dbid':{{t.id}},'text':'{{t.summary}}'}
+{% endfor %}
+];
+
 function extract_tasks_from_ui(ul)
 {
 	tasks = []
@@ -14,100 +27,127 @@ function extract_tasks_from_ui(ul)
 	return tasks;
 }
 
-$(document).ready(function(){
-	window.nextDbId = 1;
-	var $ul = $('ul');
+function fix_broken_html(ul)
+{
+	console.debug("fixing broken html");
+    var $li = $('<li></li>');	       
+    var sel = window.getSelection();	        
+   	var range = sel.getRangeAt(0);	       
+    range.collapse(false);
+    range.insertNode($li.get(0));
+    range = range.cloneRange();
+    range.selectNodeContents($li.get(0));
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
 
-	$('ul').on('keyup keydown', function() {
-	  var $this = $(this);
-	    if (! $this.html()) {
-	    	console.debug("no html");
-	        var $li = $('<li></li>');
-	       
-	        var sel = window.getSelection();
-	        
-	       var range = sel.getRangeAt(0);
-	       
-	        range.collapse(false);
-	        range.insertNode($li.get(0));
-	        range = range.cloneRange();
-	        range.selectNodeContents($li.get(0));
-	        range.collapse(false);
-	        sel.removeAllRanges();
-	        sel.addRange(range);
-	        
-	    } else {
-	    	//console.debug("html");
-	        
-	        //are there any tags that AREN'T LIs?
-	        //this should only occur on a paste
-	        var $nonLI = $this.find(':not(li, br)');
-	        
-	        if ($nonLI.length) {
-	            $this.contents().replaceWith(function() {
-	    //we create a fake div, add the text, then get the html in order to strip out html code. we then clean up a bit by replacing nbsp's with real spaces
-	return '<li>' + $('<div />').text($(this).text()).html().replace(/&nbsp;/g, ' ') + '</li>';
-	            }); 
-	            //we could make this better by putting the caret at the end of the last LI, or something similar
-	        }       
+function remove_other_tags(ul)
+{
+	var $this = $(ul);	
 
-	        /*var $li = $this.find('li');
-	        console.debug("Elements: "+$li.length);
-	        $li.each(function(index){
-	        	console.debug(" * '"+$(this).text()+"' DB_ID:"+$(this).attr('dbid'));
-	        });*/            
+	//are there any tags that AREN'T LIs?
+    //this should only occur on a paste
+    var $nonLI = $this.find(':not(li, br)');
+    
+    if ($nonLI.length) {
+        $this.contents().replaceWith(function() {
+    		//we create a fake div, add the text, then get the html in order to strip out html code. we then clean up a bit by replacing nbsp's with real spaces
+			return '<li>' + $('<div />').text($(this).text()).html().replace(/&nbsp;/g, ' ') + '</li>';
+        }); 
+        //we could make this better by putting the caret at the end of the last LI, or something similar
+    }
+}
 
-	        $current_tasks_map = []
+function tasks_by_id()
+{
+	current_tasks_map = []
 
-			$.each($ul.children('li'), function( index, value ) {
-				var dbid = $(value).attr('dbid');
-				if (!$current_tasks_map[dbid]){
-					$current_tasks_map[dbid] = []
-				}
-				element = new Object();
-				element.tag = value;
-				element.text = $(value).text();
-				$current_tasks_map[dbid].push(element);
-				//console.log("Index "+index+", value "+dbid);
-			});
-			for (var k in $current_tasks_map){
-				if ($current_tasks_map[k].length!=1){
-					console.log("Elements with DBID "+k+": "+$current_tasks_map[k].length);
-					var empty = [];
-					for (var i in $current_tasks_map[k]){
-						el = $current_tasks_map[k][i];
-						console.log("Exploring "+el);
-						if (!(el.text) || el.text.length==0){
-							empty.push(el);
-						}
-					}
-					if (empty.length==($current_tasks_map[k].length-1)){
-						console.log("Ok, I should attribute a new DBID");
-						for (var i in empty){
-							el = empty[i].tag;
-							dbId = "new_"+window.nextDbId;
-							$(el).attr('dbid',dbId);
-							console.log("Setting the new id "+dbId+" to "+el);
-							window.nextDbId++;		
-						}	
-					} else {
-						console.log("I don't know what to do...");	
-					}
-					
+	$.each(window.listtag.children('li'), function( index, value ) {
+		var dbid = $(value).attr('dbid');
+		if (!current_tasks_map[dbid]){
+			current_tasks_map[dbid] = []
+		}
+		element = new Object();
+		element.tag = value;
+		element.text = $(value).text();
+		current_tasks_map[dbid].push(element);
+	});	
+	return current_tasks_map;
+}
+
+function assign_dbids()
+{
+	$current_tasks_map = tasks_by_id();
+
+	for (var k in $current_tasks_map){
+		if ($current_tasks_map[k].length!=1){
+			console.log("Elements with DBID "+k+": "+$current_tasks_map[k].length);
+			var empty = [];
+			for (var i in $current_tasks_map[k]){
+				el = $current_tasks_map[k][i];
+				//console.log("Exploring "+el);
+				if (!(el.text) || el.text.length==0){
+					empty.push(el);
 				}
 			}
-	    }
+			if (empty.length==($current_tasks_map[k].length-1)){
+				console.log("Ok, I should attribute a new DBID");
+				for (var i in empty){
+					el = empty[i].tag;
+					dbId = "new_"+window.nextDbId;
+					$(el).attr('dbid',dbId);
+					console.log("Setting the new id "+dbId+" to "+el);
+					window.nextDbId++;		
+				}	
+			} else {
+				console.log("I don't know what to do... there are "+empty.length+ " elements out of "+$current_tasks_map[k].length+" having the id "+k);	
+			}				
+		}
+	}	
+}
+
+/**
+ * Build the new list of tasks and verify
+ * which ones were deleted among the original
+ * (the others do not count)
+ */
+function update_tasks()
+{
+	error("to be implemented");
+}
+
+function ul_updated(ul)
+{
+	var $this = $(ul);
+	if (! $this.html()) {
+    	fix_broken_html(ul);
+    	ul_updated(ul);
+    	return;	        
+    } else {	        
+        remove_other_tags(ul);       
+        assign_dbids();
+		update_tasks();        
+    }
+}
+
+$(document).ready(function(){
+	window.nextDbId = 1;
+	window.listtag = $('ul');
+
+	$('ul').on('keyup keydown', function() {
+	  ul_updated(this);  
 	});	
 	
 	$('#save').click( function(){
-		//console.log("Saving children: "+$ul.children('li'));
+		//console.log("Saving children: "+window.listtag.children('li'));
 
 		$.getJSON($SCRIPT_ROOT + '/_store_tasks', {
-	        tasks: JSON.stringify(extract_tasks_from_ui($ul))
+	        tasks: JSON.stringify(extract_tasks_from_ui(window.listtag))
 	      }, function(data) {
 	        //$("#result").text(data.result);
 	      });
-		localStorage.setItem('list', $ul.html());
+		localStorage.setItem('list', window.listtag.html());
 		//alert('save');
 	});
 		
@@ -118,7 +158,7 @@ $(document).ready(function(){
 	});
 	
 	if(localStorage.getItem('list')){
-		$ul.html(localStorage.getItem('list'));
+		window.listtag.html(localStorage.getItem('list'));
 	}
 });
 </script>
