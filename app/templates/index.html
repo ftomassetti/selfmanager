@@ -3,12 +3,66 @@
 <script language="javascript">
 $(document).ready(function(){
 	var $ul = $('ul');
+
+	$('ul').on('keyup keydown', function() {
+	  var $this = $(this);
+	    if (! $this.html()) {
+	    	console.debug("no html");
+	        var $li = $('<li></li>');
+	       
+	        var sel = window.getSelection();
+	        
+	       var range = sel.getRangeAt(0);
+	       
+	        range.collapse(false);
+	        range.insertNode($li.get(0));
+	        range = range.cloneRange();
+	        range.selectNodeContents($li.get(0));
+	        range.collapse(false);
+	        sel.removeAllRanges();
+	        sel.addRange(range);
+	        
+	    } else {
+	    	//console.debug("html");
+	        
+	        //are there any tags that AREN'T LIs?
+	        //this should only occur on a paste
+	        var $nonLI = $this.find(':not(li, br)');
+	        
+	        if ($nonLI.length) {
+	            $this.contents().replaceWith(function() {
+	    //we create a fake div, add the text, then get the html in order to strip out html code. we then clean up a bit by replacing nbsp's with real spaces
+	return '<li>' + $('<div />').text($(this).text()).html().replace(/&nbsp;/g, ' ') + '</li>';
+	            }); 
+	            //we could make this better by putting the caret at the end of the last LI, or something similar
+	        }       
+
+	        /*var $li = $this.find('li');
+	        console.debug("Elements: "+$li.length);
+	        $li.each(function(index){
+	        	console.debug(" * '"+$(this).text()+"' DB_ID:"+$(this).attr('dbid'));
+	        });*/            
+
+	        $current_tasks_map = []
+
+			$.each($ul.children('li'), function( index, value ) {
+				var dbid = $(value).attr('dbid');
+				if (!$current_tasks_map[dbid]){
+					$current_tasks_map[dbid] = []
+				}
+				$current_tasks_map[dbid].push($(value).text());
+				//console.log("Index "+index+", value "+dbid);
+			});
+			for (var k in $current_tasks_map){
+				if ($current_tasks_map[k].length!=1){
+					console.log("Elements with DBID "+k+": "+$current_tasks_map[k].length);
+				}
+			}
+	    }
+	});	
 	
 	$('#save').click( function(){
-		$.each($ul.children('li'), function( index, value ) {
-			console.log("Index "+index+", value "+$(value).attr('dbid'));
-		});
-		console.log("Saving children: "+$ul.children('li'));
+		//console.log("Saving children: "+$ul.children('li'));
 
 		$.getJSON($SCRIPT_ROOT + '/_store_tasks', {
 	        content: $ul.html()
