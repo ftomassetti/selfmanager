@@ -11,11 +11,23 @@ from flask.ext.admin.contrib.sqla.form import InlineModelConverter, get_form
 from flask.ext.admin import helpers
 
 from flask import Flask, jsonify, render_template, request
+import simplejson as json
 
 
 @app.route('/_store_tasks')
 def store_tasks():
-    print(request.args)
+    #print("Rquest to store tasks")
+    #print("Request args "+str(request.args))
+    #tasks_str = request.args.get('tasks')
+    #tasks_str = request.args
+    #print("Tasks str: "+str(tasks_str))
+    tasks = json.loads(request.args['tasks'])
+    for t in tasks:
+        dbid = t['dbid']
+        text = t['text']
+        print("Task "+dbid+": "+text)
+    #print("Tasks: "+str(tasks));
+    #print("Tasks printed")
     return jsonify(result="ok")
 
 class AdminAccessible(object):

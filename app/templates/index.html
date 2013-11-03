@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <script language="javascript">
+
+function extract_tasks_from_ui(ul)
+{
+	tasks = []
+	$.each(ul.children('li'), function( index, value ) {
+		task = new Object();
+		task.dbid    = $(value).attr('dbid');
+		task.text = $(value).text();
+		tasks.push(task)
+	});
+	return tasks;
+}
+
 $(document).ready(function(){
 	window.nextDbId = 1;
 	var $ul = $('ul');
@@ -90,7 +103,7 @@ $(document).ready(function(){
 		//console.log("Saving children: "+$ul.children('li'));
 
 		$.getJSON($SCRIPT_ROOT + '/_store_tasks', {
-	        content: $ul.html()
+	        tasks: JSON.stringify(extract_tasks_from_ui($ul))
 	      }, function(data) {
 	        //$("#result").text(data.result);
 	      });
