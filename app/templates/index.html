@@ -2,6 +2,7 @@
 {% block content %}
 <script language="javascript">
 $(document).ready(function(){
+	window.nextDbId = 1;
 	var $ul = $('ul');
 
 	$('ul').on('keyup keydown', function() {
@@ -50,12 +51,36 @@ $(document).ready(function(){
 				if (!$current_tasks_map[dbid]){
 					$current_tasks_map[dbid] = []
 				}
-				$current_tasks_map[dbid].push($(value).text());
+				element = new Object();
+				element.tag = value;
+				element.text = $(value).text();
+				$current_tasks_map[dbid].push(element);
 				//console.log("Index "+index+", value "+dbid);
 			});
 			for (var k in $current_tasks_map){
 				if ($current_tasks_map[k].length!=1){
 					console.log("Elements with DBID "+k+": "+$current_tasks_map[k].length);
+					var empty = [];
+					for (var i in $current_tasks_map[k]){
+						el = $current_tasks_map[k][i];
+						console.log("Exploring "+el);
+						if (!(el.text) || el.text.length==0){
+							empty.push(el);
+						}
+					}
+					if (empty.length==($current_tasks_map[k].length-1)){
+						console.log("Ok, I should attribute a new DBID");
+						for (var i in empty){
+							el = empty[i].tag;
+							dbId = "new_"+window.nextDbId;
+							$(el).attr('dbid',dbId);
+							console.log("Setting the new id "+dbId+" to "+el);
+							window.nextDbId++;		
+						}	
+					} else {
+						console.log("I don't know what to do...");	
+					}
+					
 				}
 			}
 	    }
