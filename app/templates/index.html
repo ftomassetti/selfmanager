@@ -20,7 +20,7 @@ function extract_tasks_from_ui(ul)
 	tasks = []
 	$.each(ul.children('li'), function( index, value ) {
 		task = new Object();
-		task.dbid    = $(value).attr('dbid');
+		task.dbid = $(value).attr('dbid');
 		task.text = $(value).text();
 		tasks.push(task)
 	});
@@ -107,6 +107,16 @@ function assign_dbids()
 	}	
 }
 
+function array_to_idmap(arr)
+{
+	var map = [];
+	for (i in arr){
+		var el = arr[i];
+		map[el.dbid] = el;
+	}	
+	return map;
+}
+
 /**
  * Build the new list of tasks and verify
  * which ones were deleted among the original
@@ -114,7 +124,60 @@ function assign_dbids()
  */
 function update_tasks()
 {
-	error("to be implemented");
+	old_tasks = window.current_tasks;
+	window.current_tasks = extract_tasks_from_ui(window.listtag);
+	current_map = array_to_idmap(window.current_tasks);
+	old_map = array_to_idmap(old_tasks);
+	for (dbid in old_map){
+		if (!current_map[dbid]){
+			console.log("Removed "+dbid);
+		}
+	}
+	for (dbid in current_map){
+		var curr_el = current_map[dbid];
+		if (!old_map[dbid]){
+			console.log("Added "+dbid);
+		} else {
+			if (!(curr_el.text===old_map[dbid].text)){
+				console.log("Text changed for "+dbid+" from '"+old_map[dbid].text+"' to '"+curr_el.text+"'");
+			}
+		}
+	}	
+}
+
+function calc_tasks_changes()
+{
+	var modifications = [];
+	old_tasks = window.original_tasks;
+	current_map = array_to_idmap(window.current_tasks);
+	old_map = array_to_idmap(old_tasks);
+	for (dbid in old_map){
+		if (!current_map[dbid]){
+			mod = new Object();
+			mod.type = 'removed';
+			mod.dbid = dbid;
+			modifications.push(mod);
+		}
+	}
+	for (dbid in current_map){
+		var curr_el = current_map[dbid];
+		if (!old_map[dbid]){
+			mod = new Object();
+			mod.type = 'added';
+			mod.dbid = dbid;
+			mod.text = curr_el.text;
+			modifications.push(mod);
+		} else {
+			if (!(curr_el.text===old_map[dbid].text)){
+				mod = new Object();
+				mod.type = 'text_changed';
+				mod.dbid = dbid;
+				mod.text = curr_el.text;
+				modifications.push(mod);
+			}
+		}
+	}	
+	return modifications;
 }
 
 function ul_updated(ul)
@@ -131,6 +194,32 @@ function ul_updated(ul)
     }
 }
 
+function update_dbid_ui(oldid,newid)
+{
+	var ul = window.listtag;
+	$.each(ul.children('li'), function( index, value ) {
+		if (oldid == $(value).attr('dbid')){
+			$(value).attr('dbid',newid);
+		}
+	});
+}
+
+function update_initial_tasks(data)
+{
+	console.debug('Data '+data);
+	// should put original_tasks = current_tasks
+	// just updating the ids of type 'new_'...
+
+	window.original_tasks = window.current_tasks;
+	for (i in window.current_tasks){
+		t = window.current_tasks[i];
+		if (data.new_ids[t.dbid]){
+			update_dbid_ui(t.dbid,data.new_ids[t.dbid]);
+			t.dbid = data.new_ids[t.dbid];
+		}
+	}
+}
+
 $(document).ready(function(){
 	window.nextDbId = 1;
 	window.listtag = $('ul');
@@ -143,9 +232,9 @@ $(document).ready(function(){
 		//console.log("Saving children: "+window.listtag.children('li'));
 
 		$.getJSON($SCRIPT_ROOT + '/_store_tasks', {
-	        tasks: JSON.stringify(extract_tasks_from_ui(window.listtag))
+	        changes: JSON.stringify(calc_tasks_changes())
 	      }, function(data) {
-	        //$("#result").text(data.result);
+	        update_initial_tasks(data);
 	      });
 		localStorage.setItem('list', window.listtag.html());
 		//alert('save');
@@ -163,7 +252,7 @@ $(document).ready(function(){
 });
 </script>
 {% if user!=None and user.is_authenticated() and not user.is_anonymous(): %}
-<ul contenteditable>
+ <ul contenteditable>
 {% for t in tasks %}
 <li dbid={{t.id}}>{{t.summary}}</li>
 {% endfor %}

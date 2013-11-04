@@ -21,14 +21,22 @@ def store_tasks():
     #tasks_str = request.args.get('tasks')
     #tasks_str = request.args
     #print("Tasks str: "+str(tasks_str))
-    tasks = json.loads(request.args['tasks'])
-    for t in tasks:
-        dbid = t['dbid']
-        text = t['text']
-        print("Task "+dbid+": "+text)
+    changes = json.loads(request.args['changes'])
+    new_ids = dict()
+    for c in changes:
+        dbid = c['dbid']
+        type = c['type']
+        if type=='added':
+            new_task = Task.create(c['text'])
+            new_ids[dbid] = new_task.id
+        elif type=='removed':
+            Task.delete(dbid)
+        elif type=='text_changed':
+            Task.set_summary(dbid,c['text'])
+        print("Changed "+dbid+": "+type)
     #print("Tasks: "+str(tasks));
     #print("Tasks printed")
-    return jsonify(result="ok")
+    return jsonify(new_ids=new_ids)
 
 class AdminAccessible(object):
     def is_accessible(self):
@@ -124,7 +132,10 @@ class AdminIndexView(AdminAccessible, admin.AdminIndexView):
 @app.route('/index')
 def index():
     user = login.current_user
-    tasks = Task.owned_by(user)
+    if not user.is_anonymous():
+        tasks = Task.owned_by(user)
+    else:
+        tasks = []
     return render_template('index.html', 
         title ="Homepage",user=user,tasks=tasks)
 

@@ -47,7 +47,7 @@ class User(db.Model, IdMixin, GetMixin):
 
     # Required for administrative interface
     def __unicode__(self):
-        return self.name + "<" + self.email + ">"
+        return ("%r<%r>" % (self.name, self.email))
 
     def __repr__(self):
         return '<User %r>' % (self.email)
@@ -55,11 +55,31 @@ class User(db.Model, IdMixin, GetMixin):
 
 class Task(db.Model, IdMixin, GetMixin):
     id      = db.Column(db.Integer, primary_key=True)
-    summary = db.Column(db.String(200), unique=True)
+    summary = db.Column(db.String(200))
 #    owners  = db.relationship('User',secondary="tasks_owners",backref='owned_tasks')
 
     def __init__(self,summary):
         self.summary = summary
+
+    @classmethod
+    def create(self,summary):
+        instance = Task(summary)
+        db.session.add(instance)
+        db.session.commit()
+        return instance
+
+    @classmethod
+    def delete(self,id):
+        instance = Task.get_by_id(id)
+        db.session.delete(instance)
+        db.session.commit()       
+
+    @classmethod
+    def set_summary(self,id,summary):
+        instance = Task.get_by_id(id)
+        instance.summary = summary
+        db.session.add(instance)
+        db.session.commit()
 
     @classmethod
     def owned_by(self,user):
