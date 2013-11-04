@@ -97,6 +97,7 @@ function assign_dbids()
 					el = empty[i].tag;
 					dbId = "new_"+window.nextDbId;
 					$(el).attr('dbid',dbId);
+					$(el).attr('style','background-color:#00CC00');
 					console.log("Setting the new id "+dbId+" to "+el);
 					window.nextDbId++;		
 				}	
